@@ -34,6 +34,7 @@ class Tweet(val user: String, val text: String, val retweets: Int) {
  */
 abstract class TweetSet extends TweetSetInterface {
 
+  def isEmpty: Boolean
   /**
    * This method takes a predicate and returns a subset of all the elements
    * in the original set for which the predicate is true.
@@ -56,8 +57,8 @@ abstract class TweetSet extends TweetSetInterface {
    * Question: Should we implment this method here, or should it remain abstract
    * and be implemented in the subclasses?
    */
-  def union(that: TweetSet): TweetSet
-
+    def union(that: TweetSet): TweetSet = that.filterAcc(twit=> true, this)
+    
   /**
    * Returns the tweet from this set which has the greatest retweet count.
    *
@@ -67,7 +68,7 @@ abstract class TweetSet extends TweetSetInterface {
    * Question: Should we implment this method here, or should it remain abstract
    * and be implemented in the subclasses?
    */
-  def mostRetweeted: Tweet = ???
+  def mostRetweeted: Tweet
 
   /**
    * Returns a list containing all tweets of this set, sorted by retweet count
@@ -109,13 +110,14 @@ abstract class TweetSet extends TweetSetInterface {
 }
 
 class Empty extends TweetSet {
+  def isEmpty: Boolean = true
   def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet = acc
+
+  def mostRetweeted: Tweet = throw new NoSuchElementException
 
   /**
    * The following methods are already implemented
    */
-  def union(that: TweetSet): TweetSet = that
-
   def contains(tweet: Tweet): Boolean = false
 
   def incl(tweet: Tweet): TweetSet = new NonEmpty(tweet, new Empty, new Empty)
@@ -126,6 +128,7 @@ class Empty extends TweetSet {
 }
 
 class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet {
+  def isEmpty: Boolean = false
 
   def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet = {
     if (p(elem)) {
@@ -134,7 +137,12 @@ class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet {
     else this.right.filterAcc(p, this.left.filterAcc(p, acc))
   }
 
-  def union(that: TweetSet): TweetSet = that.filterAcc(twit=> true, this)
+  def mostRetweeted: Tweet ={
+    val filtered = this.filter(twit => twit.retweets > this.elem.retweets);
+    if(filtered.isEmpty) this.elem
+    else filtered.mostRetweeted
+  }
+
   /**
    * The following methods are already implemented
    */
@@ -201,7 +209,7 @@ object GoogleVsApple {
 object Main extends App {
   // Print the trending tweets
   val set1 = new Empty
-  val a = new Tweet("a", "a body", 20);
+  val a = new Tweet("a", "a body", 6);
   val b = new Tweet("b", "b body", 20)
   val set2 = set1.incl(a)
   val set3 = set2.incl(b)
@@ -210,8 +218,8 @@ object Main extends App {
   val set4c = set3.incl(c)
   val set4d = set3.incl(d)
   val set5 = set4c.incl(d)
-  val ss = set1.union(set2)
-  println(ss.contains(a))
-  println(ss.contains(b))
+  println(set4c.mostRetweeted)
+  println(set2.mostRetweeted)
+  println(set1.mostRetweeted)
   //GoogleVsApple.trending foreach println
 }
