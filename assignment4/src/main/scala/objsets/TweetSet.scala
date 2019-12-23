@@ -41,7 +41,9 @@ abstract class TweetSet extends TweetSetInterface {
    * Question: Can we implment this method here, or should it remain abstract
    * and be implemented in the subclasses?
    */
-  def filter(p: Tweet => Boolean): TweetSet = ???
+  def filter(p: Tweet => Boolean): TweetSet = {
+    this.filterAcc(p, new Empty());
+  }
 
   /**
    * This is a helper method for `filter` that propagetes the accumulated tweets.
@@ -54,7 +56,7 @@ abstract class TweetSet extends TweetSetInterface {
    * Question: Should we implment this method here, or should it remain abstract
    * and be implemented in the subclasses?
    */
-  def union(that: TweetSet): TweetSet = ???
+  def union(that: TweetSet): TweetSet
 
   /**
    * Returns the tweet from this set which has the greatest retweet count.
@@ -107,11 +109,12 @@ abstract class TweetSet extends TweetSetInterface {
 }
 
 class Empty extends TweetSet {
-  def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet = this
+  def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet = acc
 
   /**
    * The following methods are already implemented
    */
+  def union(that: TweetSet): TweetSet = that
 
   def contains(tweet: Tweet): Boolean = false
 
@@ -124,9 +127,14 @@ class Empty extends TweetSet {
 
 class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet {
 
-  def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet = new Empty()
+  def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet = {
+    if (p(elem)) {
+      this.right.filterAcc(p, this.left.filterAcc(p, acc.incl(elem)))
+    }
+    else this.right.filterAcc(p, this.left.filterAcc(p, acc))
+  }
 
-
+  def union(that: TweetSet): TweetSet = that.filterAcc(twit=> true, this)
   /**
    * The following methods are already implemented
    */
@@ -192,5 +200,18 @@ object GoogleVsApple {
 
 object Main extends App {
   // Print the trending tweets
-  GoogleVsApple.trending foreach println
+  val set1 = new Empty
+  val a = new Tweet("a", "a body", 20);
+  val b = new Tweet("b", "b body", 20)
+  val set2 = set1.incl(a)
+  val set3 = set2.incl(b)
+  val c = new Tweet("c", "c body", 7)
+  val d = new Tweet("d", "d body", 9)
+  val set4c = set3.incl(c)
+  val set4d = set3.incl(d)
+  val set5 = set4c.incl(d)
+  val ss = set1.union(set2)
+  println(ss.contains(a))
+  println(ss.contains(b))
+  //GoogleVsApple.trending foreach println
 }
