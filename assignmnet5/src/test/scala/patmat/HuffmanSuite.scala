@@ -36,12 +36,15 @@ class HuffmanSuite {
     assertEquals(List(Fork(Leaf('e',1),Leaf('t',2),List('e', 't'),3), Leaf('x',4)), combine(leaflist))
   }
 
-
-  @Test def `decode and encode a very short text should be identity (10pts)`: Unit =
+    @Test def `decode and encode a very short text should be identity (10pts)` : Unit =
     new TestTrees {
       assertEquals("ab".toList, decode(t1, encode(t1)("ab".toList)))
     }
 
+    @Test def `codetable (10pts)` : Unit =
+    new TestTrees {
+      assertEquals(Fork(Fork(Leaf('a',2), Leaf('b',3), List('a','b'), 5), Leaf('d',4), List('a','b','d'), 9), createCodeTree("aabbbdddd".toList))
+    }
 
   @Rule def individualTestTimeout = new org.junit.rules.Timeout(10 * 1000)
 }
