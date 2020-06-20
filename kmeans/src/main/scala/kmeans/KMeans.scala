@@ -87,27 +87,27 @@ class KMeans extends KMeansInterface {
 
   def converged(eta: Double, oldMeans: Seq[Point], newMeans: Seq[Point]): Boolean = {
     oldMeans.zip(newMeans)
-    .map( p => p._1.squareDistance(p._2) < eta)
+    .map( p => p._1.squareDistance(p._2) <= eta)
     .forall(p => p)
   }
 
   def converged(eta: Double, oldMeans: ParSeq[Point], newMeans: ParSeq[Point]): Boolean = {
   
     oldMeans.zip(newMeans).par
-    .map( p => p._1.squareDistance(p._2) < eta)
+    .map( p => p._1.squareDistance(p._2) <= eta)
     .forall(p => p)
   }
 
   @tailrec
   final def kMeans(points: Seq[Point], means: Seq[Point], eta: Double): Seq[Point] = {
     val newMeans = update(classify(points, means), means)
-    if (!converged(eta, means, newMeans)) kMeans(points, newMeans, eta) else means // your implementation need to be tail recursive
+    if (!converged(eta, means, newMeans)) kMeans(points, newMeans, eta) else newMeans // your implementation need to be tail recursive
   }
 
   @tailrec
   final def kMeans(points: ParSeq[Point], means: ParSeq[Point], eta: Double): ParSeq[Point] = {
     val newMeans = update(classify(points, means), means)
-    if (!converged(eta, means, newMeans)) kMeans(points, newMeans, eta) else means // your implementation need to be tail recursive
+    if (!converged(eta, means, newMeans)) kMeans(points, newMeans, eta) else newMeans // your implementation need to be tail recursive
   }
 }
 
