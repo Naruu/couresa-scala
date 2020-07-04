@@ -41,16 +41,7 @@ case class Loc(latitude: String, longitude: String) extends Serializable
     * @return A sequence containing triplets (date, location, temperature)
     */
   def locateTemperatures(year: Year, stationsFile: String, temperaturesFile: String): Iterable[(LocalDate, Location, Temperature)] = {
-
-
-    //val stations = (Source.fromInputStream(getClass.getResourceAsStream(stationsFile), "utf-8").getLines().toSeq).toDF
-
-    //
-    //val stationsPath = getClass.getResource(stationsFile).getPath
-    //val temperaturesPath = getClass.getResource(temperaturesFile).getPath
-    // val stations = spark.read.schema(stationSchema).csv(stationsPath)
-    
-    
+        
     val stationsLines = Source.fromInputStream(getClass.getResourceAsStream(stationsFile), "utf-8").getLines().toSeq
     val stationsRDD: RDD[(Key, Loc)] = sc.parallelize(stationsLines.map(line => line.split(","))
     .filter(line => (line.size == 4) && line(2).nonEmpty && line(3).nonEmpty)
@@ -72,7 +63,6 @@ case class Loc(latitude: String, longitude: String) extends Serializable
                                                         (v._2._1, v._1, v._2._2)
                                                         }}
                                                         ).collect
-    //joined.map( row => (LocalDate.of(year, row.getAs[Int](0), row.getAs[Int](1)), Location(row.getAs[Double](2), row.getAs[Double](3)), row.getAs[Temperature](4))).collect()
   }
 
   /**
@@ -88,9 +78,6 @@ case class Loc(latitude: String, longitude: String) extends Serializable
       val v = row._2
       (k, v._1/ v._2)
     }).collect
-    //.mapValues
-    //reduceByKey({ case( x, y ) => ( x._1 + y._1, x._2 + y._2 )})
-    //reduced.mapValues({case (location, temperature) => location})
   }
 
   def main(args: Array[String]): Unit = {
