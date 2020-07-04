@@ -38,5 +38,7 @@ case class CellPoint(x: Double, y: Double)
   * @param green Level of green, 0 ≤ green ≤ 255
   * @param blue Level of blue, 0 ≤ blue ≤ 255
   */
-case class Color(red: Int, green: Int, blue: Int)
+case class Color(red: Int, green: Int, blue: Int) {
+  def -(that: Color) = Color(this.red - that.red, this.green - that.green, this.blue - that.blue)
+}
 

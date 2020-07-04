@@ -16,22 +16,6 @@ object Extraction extends ExtractionInterface {
   @transient lazy val conf: SparkConf = new SparkConf().setMaster("local").setAppName("Extraction")
   @transient lazy val sc: SparkContext = new SparkContext(conf)
 
-val stationSchema = StructType(Array(
-    StructField("STN",StringType,true),
-    StructField("WBAN",StringType,true),
-    StructField("latitude",StringType,true),
-    StructField("longitude", StringType, true)
-  ))
-
-val temperatureSchema = StructType(Array(
-    StructField("STN",StringType,true),
-    StructField("WBAN",StringType,true),
-    StructField("month",IntegerType,true),
-    StructField("day", IntegerType, true),
-    StructField("temperature", DoubleType, true)
-  ))
-
-
 case class Key(stn: String, wban: String) extends Serializable
 case class Loc(latitude: String, longitude: String) extends Serializable
   /**
