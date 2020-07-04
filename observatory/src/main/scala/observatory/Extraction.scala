@@ -1,0 +1,102 @@
+package observatory
+
+import java.time.LocalDate
+import scala.io.Source
+import org.apache.spark.SparkConf
+import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
+
+import org.apache.spark.sql.types._
+
+/**
+  * 1st milestone: data extraction
+  */
+object Extraction extends ExtractionInterface {
+
+  @transient lazy val conf: SparkConf = new SparkConf().setMaster("local").setAppName("Extraction")
+  @transient lazy val sc: SparkContext = new SparkContext(conf)
+
+val stationSchema = StructType(Array(
+    StructField("STN",StringType,true),
+    StructField("WBAN",StringType,true),
+    StructField("latitude",StringType,true),
+    StructField("longitude", StringType, true)
+  ))
+
+val temperatureSchema = StructType(Array(
+    StructField("STN",StringType,true),
+    StructField("WBAN",StringType,true),
+    StructField("month",IntegerType,true),
+    StructField("day", IntegerType, true),
+    StructField("temperature", DoubleType, true)
+  ))
+
+
+case class Key(stn: String, wban: String) extends Serializable
+case class Loc(latitude: String, longitude: String) extends Serializable
+  /**
+    * @param year             Year number
+    * @param stationsFile     Path of the stations resource file to use (e.g. "/stations.csv")
+    * @param temperaturesFile Path of the temperatures resource file to use (e.g. "/1975.csv")
+    * @return A sequence containing triplets (date, location, temperature)
+    */
+  def locateTemperatures(year: Year, stationsFile: String, temperaturesFile: String): Iterable[(LocalDate, Location, Temperature)] = {
+
+
+    //val stations = (Source.fromInputStream(getClass.getResourceAsStream(stationsFile), "utf-8").getLines().toSeq).toDF
+
+    //
+    //val stationsPath = getClass.getResource(stationsFile).getPath
+    //val temperaturesPath = getClass.getResource(temperaturesFile).getPath
+    // val stations = spark.read.schema(stationSchema).csv(stationsPath)
+    
+    
+    val stationsLines = Source.fromInputStream(getClass.getResourceAsStream(stationsFile), "utf-8").getLines().toSeq
+    val stationsRDD: RDD[(Key, Loc)] = sc.parallelize(stationsLines.map(line => line.split(","))
+    .filter(line => (line.size == 4) && line(2).nonEmpty && line(3).nonEmpty)
+    .map(arr => (Key(stn = arr(0), wban = arr(1)), Loc(latitude = arr(2), longitude = arr(3)))
+    ))
+
+    val temperaturesLines = Source.fromInputStream(getClass.getResourceAsStream(temperaturesFile), "utf-8").getLines().toSeq
+    val tempRDD:RDD[(Key, (LocalDate, Temperature))] = sc.parallelize(temperaturesLines.map(line => {
+                                                                      val arr = line.split(",")
+                                                                      (Key(stn = arr(0), wban = arr(1)),
+                                                                      (LocalDate.of(year, arr(2).toInt,arr(3).toInt),
+                                                                      arr(4).toDouble)
+                                                                      )
+                                                                      }))
+    val filteredStations = stationsRDD.filter({ case (Key(stn: String, wban: String), Loc(latitude: String, longitude:String)) => latitude.nonEmpty && longitude.nonEmpty })
+    .mapValues({case Loc(latitude: String, longitude:String) => Location(lat = latitude.toDouble, lon = longitude.toDouble)})
+    filteredStations.join(tempRDD).map({case (k,v) => { val loc = v._1
+                                                        val tempv = v._2
+                                                        (v._2._1, v._1, v._2._2)
+                                                        }}
+                                                        ).collect
+    //joined.map( row => (LocalDate.of(year, row.getAs[Int](0), row.getAs[Int](1)), Location(row.getAs[Double](2), row.getAs[Double](3)), row.getAs[Temperature](4))).collect()
+  }
+
+  /**
+    * @param records A sequence containing triplets (date, location, temperature)
+    * @return A sequence containing, for each location, the average temperature over the year.
+    */
+  def locationYearlyAverageRecords(records: Iterable[(LocalDate, Location, Temperature)]): Iterable[(Location, Temperature)] = {
+    val rdd_records = sc.parallelize(records.toSeq)
+    val keyed = rdd_records.map({ case (date: LocalDate, location: Location, temperature: Temperature) => (location, (temperature, 1))})
+    keyed.reduceByKey({ case( x, y ) => (x._1 + y._1, x._2 + y._2)})
+    .map(row => {
+      val k = row._1
+      val v = row._2
+      (k, v._1/ v._2)
+    }).collect
+    //.mapValues
+    //reduceByKey({ case( x, y ) => ( x._1 + y._1, x._2 + y._2 )})
+    //reduced.mapValues({case (location, temperature) => location})
+  }
+
+  def main(args: Array[String]): Unit = {
+    val stationsFile = "/stations_short.csv"
+    locateTemperatures(1975,"/stations_short.csv","/1975_short.csv")
+  }
+
+
+}
