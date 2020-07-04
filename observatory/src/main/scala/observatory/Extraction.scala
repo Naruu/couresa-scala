@@ -52,8 +52,8 @@ case class Loc(latitude: String, longitude: String) extends Serializable
     val tempRDD:RDD[(Key, (LocalDate, Temperature))] = sc.parallelize(temperaturesLines.map(line => {
                                                                       val arr = line.split(",")
                                                                       (Key(stn = arr(0), wban = arr(1)),
-                                                                      (LocalDate.of(year, arr(2).toInt,arr(3).toInt),
-                                                                      arr(4).toDouble)
+                                                                      (LocalDate.of(year, arr(2).toInt, arr(3).toInt),
+                                                                      (arr(4).toDouble - 32)*5/9)
                                                                       )
                                                                       }))
     val filteredStations = stationsRDD.filter({ case (Key(stn: String, wban: String), Loc(latitude: String, longitude:String)) => latitude.nonEmpty && longitude.nonEmpty })
@@ -71,8 +71,14 @@ case class Loc(latitude: String, longitude: String) extends Serializable
     */
   def locationYearlyAverageRecords(records: Iterable[(LocalDate, Location, Temperature)]): Iterable[(Location, Temperature)] = {
     val rdd_records = sc.parallelize(records.toSeq)
-    val keyed = rdd_records.map({ case (date: LocalDate, location: Location, temperature: Temperature) => (location, (temperature, 1))})
+    val keyed = rdd_records.map({ case (date: LocalDate, location: Location, temperature: Temperature) => ((location, date.getYear), (temperature, 1))})
     keyed.reduceByKey({ case( x, y ) => (x._1 + y._1, x._2 + y._2)})
+    .map(row => {
+      val k = row._1
+      val v = row._2
+      (k._1, v._1/ v._2)
+    }).mapValues( x => (x, 1) )
+    .reduceByKey({ case( x, y ) => (x._1 + y._1, x._2 + y._2)})
     .map(row => {
       val k = row._1
       val v = row._2
