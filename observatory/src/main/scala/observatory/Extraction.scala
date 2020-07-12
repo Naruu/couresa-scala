@@ -7,17 +7,17 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
 import org.apache.spark.sql.types._
+import observatory.SparkConfig._
 
 /**
   * 1st milestone: data extraction
   */
 object Extraction extends ExtractionInterface {
 
-  @transient lazy val conf: SparkConf = new SparkConf().setMaster("local").setAppName("Extraction")
-  @transient lazy val sc: SparkContext = new SparkContext(conf)
+  val sc = SparkConfig.sc
 
-case class Key(stn: String, wban: String) extends Serializable
-case class Loc(latitude: String, longitude: String) extends Serializable
+  case class Key(stn: String, wban: String) extends Serializable
+  case class Loc(latitude: String, longitude: String) extends Serializable
   /**
     * @param year             Year number
     * @param stationsFile     Path of the stations resource file to use (e.g. "/stations.csv")
