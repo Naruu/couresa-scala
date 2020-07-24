@@ -42,3 +42,10 @@ case class Color(red: Int, green: Int, blue: Int) {
   def -(that: Color) = Color(this.red - that.red, this.green - that.green, this.blue - that.blue)
 }
 
+class Grid(){
+  val grids = for (y <- 0 until 180; x <- 0 until 360) yield (y, x)
+  val temps = Array.ofDim[Temperature](360 * 180)
+  def locToCoord(lat:Int, lon:Int): (Int, Int) = (90 - lat, lon + 180)
+  def coordToLoc(x:Int, y:Int): Location = Location(90-x, y-180)
+  }
+

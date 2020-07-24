@@ -26,7 +26,7 @@ object Visualization2 extends Visualization2Interface {
   ): Temperature = {
     val x = point.x
     val y = point.y
-    x *(y * d00 + (1-y) * d01) + (1-x) *(y * d10 + (1-y) * d11)
+    d00 * (1-x) * (1 - y) + d10* x * (1-y) + d01 * (1-x) * y + d11 * x * y
   }
 
   /**
@@ -40,7 +40,6 @@ object Visualization2 extends Visualization2Interface {
     colors: Iterable[(Temperature, Color)],
     tile: Tile
   ): Image = {
-
     val location = tileLocation(tile)
     val temperature = List((location, grid(GridLocation(location.lat.toInt, location.lon.toInt))))
     Interaction.tile(temperature, colors, tile)

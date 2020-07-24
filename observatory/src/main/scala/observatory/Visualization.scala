@@ -85,8 +85,8 @@ object Visualization extends VisualizationInterface {
   def visualize(temperatures: Iterable[(Location, Temperature)], colors: Iterable[(Temperature, Color)]): Image = {
     
     val coords = for { 
-      y <- 0 until 180;
-      x <- 0 until 360
+      y <- (0 until 180).par;
+      x <- (0 until 360).par
     } yield (y, x)
 
     val pixels = coords.par

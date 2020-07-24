@@ -11,8 +11,15 @@ object Manipulation extends ManipulationInterface {
     * @return A function that, given a latitude in [-89, 90] and a longitude in [-180, 179],
     *         returns the predicted temperature at this location
     */
+
+  
   def makeGrid(temperatures: Iterable[(Location, Temperature)]): GridLocation => Temperature = {
-    (g: GridLocation) => predictTemperature(temperatures, Location(g.lat.toDouble, g.lon.toDouble))
+    val grid = new Grid
+    val temps = grid.grids.par.map({
+      case (y, x) => (y, x, predictTemperature(temperatures, grid.coordToLoc(y,x)))
+    }).toArray.sortBy(x => (x._1, x._2)).map(_._3)
+    
+    (g: GridLocation) => temps((90 - g.lat) * 360 +  (g.lon + 180))
   }
 
   /**
@@ -21,8 +28,17 @@ object Manipulation extends ManipulationInterface {
     * @return A function that, given a latitude and a longitude, returns the average temperature at this location
     */
   def average(temperaturess: Iterable[Iterable[(Location, Temperature)]]): GridLocation => Temperature = {
+    
     val getTemps = temperaturess.par.map(makeGrid(_))
-    (g: GridLocation) => getTemps.par.map(x => x apply g).reduce(_+_)/getTemps.size
+    val len = temperaturess.size
+
+    val grid = new Grid
+    val temps = grid.grids.par.map({
+        case (y, x) => getTemps.par.map(t => t apply GridLocation(90-y, x-180)).reduce(_+_)/len
+        }
+    )
+    (g: GridLocation) => temps((90 - g.lat) * 360 +  (g.lon + 180))
+
   }
 
   /**
@@ -31,9 +47,12 @@ object Manipulation extends ManipulationInterface {
     * @return A grid containing the deviations compared to the normal temperatures
     */
   def deviation(temperatures: Iterable[(Location, Temperature)], normals: GridLocation => Temperature): GridLocation => Temperature = {
-    val temps = makeGrid(temperatures)
-    (g: GridLocation) => { temps(g) - normals(g) }
+    val grid = new Grid
+    val temps = grid.grids.par.map({
+      case (y, x) => (y, x, predictTemperature(temperatures, grid.coordToLoc(y,x)))
+    }).toArray.sortBy(x => (x._1, x._2)).map(_._3)
     
+    (g: GridLocation) => temps((90 - g.lat) * 360 +  (g.lon + 180)) - normals(g)
   }
 
 
