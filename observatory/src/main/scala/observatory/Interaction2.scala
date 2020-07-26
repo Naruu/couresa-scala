@@ -10,7 +10,6 @@ object Interaction2 extends Interaction2Interface {
     */
   def availableLayers: Seq[Layer] = {
     ???
-  }
 
   /**
     * @param selectedLayer A signal carrying the layer selected by the user

@@ -2,6 +2,7 @@ package observatory
 
 import com.sksamuel.scrimage.{Image, Pixel}
 import Interaction._
+import Visualization._
 
 /**
   * 5th milestone: value-added information visualization
@@ -40,9 +41,16 @@ object Visualization2 extends Visualization2Interface {
     colors: Iterable[(Temperature, Color)],
     tile: Tile
   ): Image = {
-    val location = tileLocation(tile)
-    val temperature = List((location, grid(GridLocation(location.lat.toInt, location.lon.toInt))))
-    Interaction.tile(temperature, colors, tile)
+    val pixels = for (y <- 0 until 256 ; x <- 0 until 256) yield (y, x)
+    val z = tile.zoom + 8
+    val result = pixels.par.map({
+      case (dy, dx) => {
+        val loc = tileLocation(Tile(tile.x + dy, tile.y + dx, z))
+        (dy, dx, interpolateColor(colors, grid(GridLocation(loc.lat.toInt, loc.lon.toInt))))
+      }
+    }).map({
+      case (y, x, color) => (y, x, Pixel(color.red, color.green, color.blue, 256))
+    }).toArray.sortBy(x => (x._1, x._2)).map(_._3)
+    Image(256, 256, result)
   }
-
 }
