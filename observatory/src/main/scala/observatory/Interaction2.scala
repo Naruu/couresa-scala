@@ -10,13 +10,14 @@ object Interaction2 extends Interaction2Interface {
     */
   def availableLayers: Seq[Layer] = {
     ???
+  }
 
   /**
     * @param selectedLayer A signal carrying the layer selected by the user
     * @return A signal containing the year bounds corresponding to the selected layer
     */
   def yearBounds(selectedLayer: Signal[Layer]): Signal[Range] = {
-    ???
+    Signal(selectedLayer().bounds)
   }
 
   /**
@@ -28,7 +29,7 @@ object Interaction2 extends Interaction2Interface {
     *         in the `selectedLayer` bounds.
     */
   def yearSelection(selectedLayer: Signal[Layer], sliderValue: Signal[Year]): Signal[Year] = {
-    ???
+    Signal(selectedLayer().bounds(sliderValue()))
   }
 
   /**
