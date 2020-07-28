@@ -46,11 +46,13 @@ object Visualization2 extends Visualization2Interface {
     val n = pow(2, 8).toInt
     val coords = for (i <- 0 until 256 ; j <- 0 until 256) yield (i, j)
     val pixels = coords.par.map({
-      case (dy, dx) => tileLocation(Tile(tile.x * n + dy, tile.y + dx, tile.zoom + 8)) })
-      .map(interpolateTemp(grid, _))
-      .map(interpolateColor(colors, _))
-      .map({ case color:Color => Pixel(color.red, color.green, color.blue, 127)
-    }).toArray
+      case (dy, dx) => (dx, dy, tileLocation(Tile(tile.x * n + dy, tile.y * n + dx, tile.zoom + 8))) })
+      .map({
+        case (dy, dx, t) => (dy, dx, interpolateTemp(grid, t)) })
+      .map({
+        case (dy, dx, t) => (dy, dx, interpolateColor(colors, t)) })
+      .map({ case (dy, dx, color:Color) => (dy, dx, Pixel(color.red, color.green, color.blue, 127))
+    }).toArray.sortBy(x => (x._1, x._2)).map(_._3)
     Image(256,256, pixels)
   }
 
